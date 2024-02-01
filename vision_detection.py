@@ -17,6 +17,9 @@ def main():
         project_id = os.getenv('PROJECT_ID')
         model_name = os.getenv('CLASSIFICATION_MODEL')
 
+        # Get the Custom Vision project
+        custom_vision_project = training_client.get_project(project_id)
+        
         # Analyze image
         if len(sys.argv) > 1:
         
@@ -28,10 +31,8 @@ def main():
                 credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})
                 training_client = CustomVisionTrainingClient(training_endpoint, credentials)
 
-                # Get the Custom Vision project
-                custom_vision_project = training_client.get_project(project_id)
                 
-                train(folder)
+                train(custom_vision_project, folder)
             elif sys.argv[1] == 'test':
                 img = os.path.join('static', 'test', sys.argv[3]) if sys.argv[3] and sys.argv[2] else os.path.join('static', 'test', 'image.jpg')
                 
@@ -39,18 +40,18 @@ def main():
                 credentials = ApiKeyCredentials(in_headers={"Prediction-key": prediction_key})
                 prediction_client = CustomVisionPredictionClient(endpoint=prediction_endpoint, credentials=credentials)
 
-                test(model_name, project_id, img)
+                test(model_name, custom_vision_project, img)
 
 
 
     except Exception as ex:
         print(ex)
 
-def train(folder):
+def train(vision_project, folder):
     print("Uploading images...")
 
     # Get the tags defined in the project
-    tags = training_client.get_tags(custom_vision_project.id)
+    tags = training_client.get_tags(vision_project.id)
 
     # Create a list of images with tagged regions
     tagged_images_with_regions = []
@@ -74,7 +75,7 @@ def train(folder):
                 tagged_images_with_regions.append(ImageFileCreateEntry(name=file, contents=image_data.read(), regions=regions))
 
     # Upload the list of images as a batch
-    upload_result = training_client.create_images_from_files(custom_vision_project.id, ImageFileCreateBatch(images=tagged_images_with_regions))
+    upload_result = training_client.create_images_from_files(vision_project.id, ImageFileCreateBatch(images=tagged_images_with_regions))
     # Check for failure
     if not upload_result.is_batch_successful:
         print("Image batch upload failed.")
@@ -84,7 +85,6 @@ def train(folder):
         print("Images uploaded.")
 
 def test(model, project, img):
-
     try:
 
         # Load image and get height, width and channels
@@ -96,7 +96,7 @@ def test(model, project, img):
 
         # Detect objects in the test image
         with open(image_file, mode="rb") as image_data:
-            results = prediction_client.detect_image(project, model, image_data)
+            results = prediction_client.detect_image(project.id, model, image_data)
 
         # Create a figure for the results
         fig = plt.figure(figsize=(8, 8))
