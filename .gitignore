@@ -2,6 +2,8 @@
 .vscode/*
 .env
 
+static/*
+
 oauth_settings.yml
 db*
 cert.crt

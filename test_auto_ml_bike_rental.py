@@ -1,11 +1,6 @@
-import requests
-import json
-import os
-import ssl
-import sys
+import requests, json, os, ssl, sys
 from dotenv import load_dotenv
 
-# Load the env variables
 load_dotenv()
 
 def allowSelfSignedHttps(allowed):
@@ -45,20 +40,20 @@ url = os.environ.get("BIKE_RENTAL_URL") if os.environ.get("BIKE_RENTAL_URL") els
 if not url:
     raise Exception("A key should be provided to invoke the endpoint as either the BIKE_RENTAL_URL or as an argument to the cmd ")
 
-# Replace this with the primary/secondary key or AMLToken for the endpoint
-api_key = os.environ.get("BIKE_RENTAL_KEY") if os.environ.get("BIKE_RENTAL_KEY") else sys.argv[2]
-if not api_key:
+key = os.environ.get("BIKE_RENTAL_KEY") if os.environ.get("BIKE_RENTAL_KEY") else sys.argv[2]
+if not key:
     raise Exception("A key should be provided to invoke the endpoint as either the BIKE_RENTAL_KEY or as an argument to the cmd ")
 
 # The azureml-model-deployment header will force the request to go to a specific deployment.
 # Remove this header to have the request observe the endpoint traffic rules
-headers = {'Content-Type':'application/json', 'Authorization':('Bearer '+ api_key), 'azureml-model-deployment': 'automl7888bd14162-1' }
+headers = {'Content-Type':'application/json', 'Authorization':('Bearer '+ key), 'azureml-model-deployment': 'automl7888bd14162-1' }
 
 try:
     response = requests.post(url, data=json.dumps(request_data), headers=headers)
 
-    result = json.loads(response.content)
-    print(f"On {columns["day"]}-{columns[month]}-{columns[year]} there should have been approximately {result[1]} bike rentals")
+    result = int(json.loads(response.content)[0])
+    # result = json.loads(response.content)
+    print(f"On {columns['day']}-{columns['mnth']}-{columns['year']} there should have been approximately {result} bike rentals")
     # print(result)
 except requests.exceptions.HTTPError as error:
     print("The request failed with status code: " + str(error.code))
