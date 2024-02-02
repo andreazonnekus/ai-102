@@ -3,7 +3,6 @@ from dotenv import load_dotenv
 import azure.ai.vision as sdk
 from azure.ai.vision.imageanalysis import ImageAnalysisClient
 from azure.ai.vision.imageanalysis.models import VisualFeatures
-from azure.ai.vision.enums import ImageAnalysisFeature
 from azure.core.credentials import AzureKeyCredential
 from PIL import Image
 
@@ -53,18 +52,12 @@ def read_image(image_file, client):
     else:
         img = sdk.VisionSource(image_file)
 
-    # Get a caption for the image. This will be a synchronously (blocking) call.
-    result = sdk.ImageAnalyzer(
-        cv_client, 
-        img,
-        # image_url=img,
-        [
-            # Not supported in australiaeast
-            # VisualFeatures.CAPTION, 
-            # VisualFeatures.READ,
-            sdk.ImageAnalysisFeature.TEXT
-        ]
-    ).analyze
+    analysis_options = sdk.ImageAnalysisOptions()
+    analysis_options.features = sdk.ImageAnalysisFeature.TEXT
+
+    image_analyzer = sdk.ImageAnalyzer(cv_client, image, analysis_options)
+
+    result = image_analyzer.analyze()
 
     print("Image analysis results:")
     # Print caption results to the console

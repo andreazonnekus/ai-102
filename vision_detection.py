@@ -21,7 +21,7 @@ def main():
         custom_vision_project = training_client.get_project(project_id)
         
         # Analyze image
-        if len(sys.argv) > 1:
+        if len(sys.argv) > 0:
         
             # Train
             if sys.argv[1] == 'train':
