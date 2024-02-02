@@ -4,7 +4,9 @@ import azure.ai.vision as sdk
 from azure.ai.vision.imageanalysis import ImageAnalysisClient
 from azure.ai.vision.imageanalysis.models import VisualFeatures
 from azure.core.credentials import AzureKeyCredential
-from PIL import Image
+from PIL import Image, ImageDraw
+from matplotlib import pyplot as plt
+
 
 from utils import *
 
@@ -25,38 +27,40 @@ def main():
         exit()
 
     # Create an Image Analysis client
-    cv_client = ImageAnalysisClient(
-        endpoint=url,
-        credential=AzureKeyCredential(key)
-    )
+    cv_client = sdk.VisionServiceOptions(url, key)
 
     # Get image
     if len(sys.argv) > 1:
-        image_file = os.path.join('static', 'input', sys.argv[2] + '.jpg') if sys.argv[2] else 'https://learn.microsoft.com/azure/ai-services/computer-vision/media/quickstarts/presentation.png'
-    
+        if len(sys.argv) > 2:
+            image_file = os.path.join('static', 'input', sys.argv[2] + '.jpg') 
+        else:
+            image_file = 'https://learn.microsoft.com/azure/ai-services/computer-vision/media/quickstarts/presentation.png'
+        
         # Analyze image
         if sys.argv[1] == 'read':
-            read_image(image_file, cv_client)
+            read_image(cv_client, image_file)
 
     else:
         image_file = 'https://learn.microsoft.com/azure/ai-services/computer-vision/media/quickstarts/presentation.png'
-        read_image(image_file, cv_client)
+        read_image(cv_client, image_file)
 
-def read_image(image_file, client):
+def read_image(client, image_file):
 
     if is_url(image_file):
         outputfile = os.path.join('static', 'input', image_file.split('/')[-1].split('.')[0] + '.jpg')
         with open(outputfile, 'wb') as file:
             file.write(requests.get(image_file).content)
-        img = sdk.VisionSource(outputfile)
-    else:
-        img = sdk.VisionSource(image_file)
-
+        image_file = outputfile
+    
+    # Specify features to be retrieved
+    img = sdk.VisionSource(image_file)
     analysis_options = sdk.ImageAnalysisOptions()
-    analysis_options.features = sdk.ImageAnalysisFeature.TEXT
+    features = analysis_options.features = (
+        sdk.ImageAnalysisFeature.TEXT
+    )
 
-    image_analyzer = sdk.ImageAnalyzer(cv_client, image, analysis_options)
-
+    # Get image analysis
+    image_analyzer = sdk.ImageAnalyzer(cv_client, img, analysis_options)
     result = image_analyzer.analyze()
 
     print("Image analysis results:")
@@ -66,52 +70,53 @@ def read_image(image_file, client):
         print(f"\t'{result.caption.text}', Confidence {result.caption.confidence:.3f}")
 
     # Prepare image for drawing
-    image = Image.open(img)
+    image = Image.open(image_file)
     fig = plt.figure(figsize=(image.width/100, image.height/100))
     plt.axis('off')
     draw = ImageDraw.Draw(image)
     color = 'cyan'
 
-
-    drawLinePolygon = True
-    r = line.bounding_polygon
-    bounding_polygon = ((r[0], r[1]),(r[2], r[3]),(r[4], r[5]),(r[6], r[7]))
-
-    for word in line.words:
-        r = word.bounding_polygon
+    for line in result.text.lines:
+        drawLinePolygon = True
+        r = line.bounding_polygon
         bounding_polygon = ((r[0], r[1]),(r[2], r[3]),(r[4], r[5]),(r[6], r[7]))
-        print("  Word: '{}', Bounding Polygon: {}, Confidence: {}".format(word.content, bounding_polygon,word.confidence))
 
-        # Draw word bounding polygon
-        drawLinePolygon = False
-        draw.polygon(bounding_polygon, outline=color, width=3)
-    
-    if drawLinePolygon:
-        draw.polygon(bounding_polygon, outline=color, width=3)
+        for word in (y for y in line.words if y.confidence > 0.5):
+            r = word.bounding_polygon
+            bounding_polygon = ((r[0], r[1]),(r[2], r[3]),(r[4], r[5]),(r[6], r[7]))
+            print("  Word: '{}', Bounding Polygon: {}, Confidence: {}".format(word.content, bounding_polygon,word.confidence))
+
+            # Draw word bounding polygon
+            drawLinePolygon = False
+            draw.polygon(bounding_polygon, outline=color, width=1)
+        
+        if drawLinePolygon:
+            draw.polygon(bounding_polygon, outline=color, width=2)
     
     if is_url(img):
-        outputfile = os.path.join('static', 'ocr', 'results_' + img.split('/')[-1].split('.')[0] + '.jpg')
+        outputfile = os.path.join('static', 'ocr', 'results_' + image_file.split('/')[-1].split('.')[0] + '.jpg')
     else:
-        outputfile = os.path.join('static', 'ocr', 'results_' + img.split(os.sep)[-1].split('.')[0] + '.jpg')
+        outputfile = os.path.join('static', 'ocr', 'results_' + image_file.split(os.sep)[-1].split('.')[0] + '.jpg')
 
     # Save image
     plt.imshow(image)
     plt.tight_layout(pad=0)
     fig.savefig(outputfile)
-    print('\n  Results saved in', outputfile)
+    if os.path.isfile(image_file):
+        print('\n  Results saved in', outputfile)
 
     # Print text (OCR) analysis results to the console
-    outputfile = os.path.join('static', 'ocr', 'results_' + img.split(os.sep)[-1].split('.')[0] + '.txt')
+    outputfile = os.path.join('static', 'ocr', 'results_' + image_file.split(os.sep)[-1].split('.')[0] + '.txt')
     print("\nRead:")
-    if result.read is not None:
+    if result.text is not None:
         with open(outputfile, 'a') as file:
-            for line in result.read.blocks[0].lines:
-                print(f"\tLine: '{line.text}', Bounding box {line.bounding_polygon}")
+            for line in result.text.lines:
+                print(f"\tLine: '{line}', Bounding box {line.bounding_polygon}")
 
-                file.write(f'\n' + line)
+                file.write(f'\n' + line.content)
 
-                for word in line.words:
-                    print(f"\t\tWord: '{word.text}', Bounding polygon {word.bounding_polygon}, Confidence {word.confidence:.3f}")
+                for word in (y for y in line.words if y.confidence > 0.5):
+                    print(f"\t\tWord: '{word.content}', Bounding polygon {word.bounding_polygon}, Confidence {word.confidence:.2f}")
     
 
 if __name__ == "__main__":

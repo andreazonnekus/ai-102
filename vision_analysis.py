@@ -18,7 +18,10 @@ def main():
 
         # Get image
         if len(sys.argv) > 1:
-            image_file = os.path.join('static', 'input', sys.argv[2] + '.jpg')
+            if len(sys.argv) > 2:
+                image_file = os.path.join('static', 'input', sys.argv[2] + '.jpg')
+            else:    
+                image_file = os.path.join('static', 'input', 'Note.jpg')
         
             # Analyze image
             if sys.argv[1] == 'analyse':
@@ -51,7 +54,6 @@ def analyse_image(image_file, cv_client):
         sdk.ImageAnalysisFeature.PEOPLE
     )
 
-
     # Get image analysis
     image = sdk.VisionSource(image_file)
 
@@ -73,13 +75,15 @@ def analyse_image(image_file, cv_client):
         #         print(" Caption: '{}' (confidence: {:.2f}%)".format(caption.content, caption.confidence * 100))
 
         # Get image tags
-        if result.tags is not None:
+        tags = [x for x in result.tags if x.confidence > 0.8]
+        if len(tags) > 0:
             print("\nTags:")
-            for tag in result.tags:
+            for tag in tags:
                 print(" Tag: '{}' (confidence: {:.2f}%)".format(tag.name, tag.confidence * 100))
-
+            
+        objects = [x for x in result.objects if x.confidence > 0.4]
         # Get objects in the image
-        if result.objects is not None:
+        if len(objects) > 0:
             print("\nObjects in image:")
 
             # Prepare image for drawing
@@ -89,7 +93,7 @@ def analyse_image(image_file, cv_client):
             draw = ImageDraw.Draw(image)
             color = 'cyan'
 
-            for detected_object in result.objects:
+            for detected_object in objects:
                 # Print object name
                 print(" {} (confidence: {:.2f}%)".format(detected_object.name, detected_object.confidence * 100))
                 
@@ -102,12 +106,13 @@ def analyse_image(image_file, cv_client):
             # Save annotated image
             plt.imshow(image)
             plt.tight_layout(pad=0)
-            outputfile = os.path.join('static', 'output', 'objects.jpg')
+            outputfile = os.path.join('static', 'output', 'objects_' + image_file.split(os.sep)[-1])
             fig.savefig(outputfile)
             print('Results saved in', outputfile)
 
+        people = [x for x in result.people if x.confidence > 0.6]
         # Get people in the image
-        if result.people is not None:
+        if len(people) > 0:
             print("\nPeople in image:")
 
             # Prepare image for drawing
@@ -117,8 +122,7 @@ def analyse_image(image_file, cv_client):
             draw = ImageDraw.Draw(image)
             color = 'cyan'
 
-            for detected_people in result.people:
-                if detected_people.confidence > 0.9:
+            for detected_people in people:
                     # Draw object bounding box
                     r = detected_people.bounding_box
                     bounding_box = ((r.x, r.y), (r.x + r.w, r.y + r.h))
@@ -130,10 +134,9 @@ def analyse_image(image_file, cv_client):
             # Save annotated image
             plt.imshow(image)
             plt.tight_layout(pad=0)
-            outputfile = os.path.join('static', 'output', 'analysed_' + image_file.split(os.sep)[-1])
+            outputfile = os.path.join('static', 'output', 'found_' + image_file.split(os.sep)[-1])
             fig.savefig(outputfile)
             print('Results saved in', outputfile)
-
 
     else:
         error_details = sdk.ImageAnalysisErrorDetails.from_result(result)
