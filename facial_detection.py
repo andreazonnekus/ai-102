@@ -12,7 +12,7 @@ load_dotenv()
 
 def main():
 
-    global cv_client
+    global vision_client
 
     try:
         # Base url for the Verify and Facelist/Large Facelist operations
@@ -25,7 +25,7 @@ def main():
             raise Exception("A key should be provided to invoke the endpoint as either the VISION_KEY or as an argument to the cmd ")
         
         # Create an authenticated FaceClient
-        cv_client = sdk.VisionServiceOptions(url, CognitiveServicesCredentials(key))
+        vision_client = sdk.VisionServiceOptions(url, CognitiveServicesCredentials(key))
 
         # Get image
         if len(sys.argv) > 1:
@@ -40,17 +40,17 @@ def main():
                     command = input('Enter a image to process:')
 
                 image_file = os.path.join('static', 'faces', command + '.jpg')
-                detect_faces(image_file, cv_client)
+                detect_faces(image_file)
             elif sys.argv[1] == 'group':
                 
         else:
             image_file = os.path.join('static', 'faces', 'people.jpg')
-            detect_faces(image_file, cv_client)
+            detect_faces(image_file)
 
     except Exception as ex:
         print(ex)
 
-def detect_faces(image_file, cv_client):
+def detect_faces(image_file):
     print('Detecting faces in', image_file)
 
      # Specify features to be retrieved (PEOPLE)
@@ -63,7 +63,7 @@ def detect_faces(image_file, cv_client):
      # Get image analysis
     image = sdk.VisionSource(image_file)
         
-    image_analyzer = sdk.ImageAnalyzer(cv_client, image, analysis_options)
+    image_analyzer = sdk.ImageAnalyzer(vision_client, image, analysis_options)
         
     result = image_analyzer.analyze()
         
@@ -106,7 +106,7 @@ def detect_faces(image_file, cv_client):
         print("\tError message: {}".format(error_details.message))    
 
 
-def group_identify(cv_client)
+def group_identify():
     # Get faces
     IMAGE_BASE_URL = 'https://raw.githubusercontent.com/Azure-Samples/cognitive-services-sample-data-files/master/Face/images/'
 
@@ -123,14 +123,14 @@ def group_identify(cv_client)
     '''
     # Create empty Person Group. Person Group ID must be lower case, alphanumeric, and/or with '-', '_'.
     print('Person group:', PERSON_GROUP_ID)
-    cv_client.person_group.create(person_group_id=PERSON_GROUP_ID, name=PERSON_GROUP_ID, recognition_model='recognition_04')
+    vision_client.person_group.create(person_group_id=PERSON_GROUP_ID, name=PERSON_GROUP_ID, recognition_model='recognition_04')
 
     # Define woman friend
-    woman = cv_client.person_group_person.create(PERSON_GROUP_ID, name="Woman")
+    woman = vision_client.person_group_person.create(PERSON_GROUP_ID, name="Woman")
     # Define man friend
-    man = cv_client.person_group_person.create(PERSON_GROUP_ID, name="Man")
+    man = vision_client.person_group_person.create(PERSON_GROUP_ID, name="Man")
     # Define child friend
-    child = cv_client.person_group_person.create(PERSON_GROUP_ID, name="Child")
+    child = vision_client.person_group_person.create(PERSON_GROUP_ID, name="Child")
 
     '''
     Detect faces and register them to each person
@@ -144,12 +144,12 @@ def group_identify(cv_client)
     for image in woman_images:
         # Check if the image is of sufficent quality for recognition.
         sufficientQuality = True
-        detected_faces = cv_client.face.detect_with_url(url=image, detection_model='detection_03', recognition_model='recognition_04', return_face_attributes=['qualityForRecognition'])
+        detected_faces = vision_client.face.detect_with_url(url=image, detection_model='detection_03', recognition_model='recognition_04', return_face_attributes=['qualityForRecognition'])
         for face in detected_faces:
             if face.face_attributes.quality_for_recognition != QualityForRecognition.high:
                 sufficientQuality = False
                 break
-            cv_client.person_group_person.add_face_from_url(PERSON_GROUP_ID, woman.person_id, image)
+            vision_client.person_group_person.add_face_from_url(PERSON_GROUP_ID, woman.person_id, image)
             print("face {} added to person {}".format(face.face_id, woman.person_id))
 
         if not sufficientQuality: continue
@@ -158,12 +158,12 @@ def group_identify(cv_client)
     for image in man_images:
         # Check if the image is of sufficent quality for recognition.
         sufficientQuality = True
-        detected_faces = cv_client.face.detect_with_url(url=image, detection_model='detection_03', recognition_model='recognition_04', return_face_attributes=['qualityForRecognition'])
+        detected_faces = vision_client.face.detect_with_url(url=image, detection_model='detection_03', recognition_model='recognition_04', return_face_attributes=['qualityForRecognition'])
         for face in detected_faces:
             if face.face_attributes.quality_for_recognition != QualityForRecognition.high:
                 sufficientQuality = False
                 break
-            cv_client.person_group_person.add_face_from_url(PERSON_GROUP_ID, man.person_id, image)
+            vision_client.person_group_person.add_face_from_url(PERSON_GROUP_ID, man.person_id, image)
             print("face {} added to person {}".format(face.face_id, man.person_id))
 
         if not sufficientQuality: continue
@@ -172,13 +172,13 @@ def group_identify(cv_client)
     for image in child_images:
         # Check if the image is of sufficent quality for recognition.
         sufficientQuality = True
-        detected_faces = cv_client.face.detect_with_url(url=image, detection_model='detection_03', recognition_model='recognition_04', return_face_attributes=['qualityForRecognition'])
+        detected_faces = vision_client.face.detect_with_url(url=image, detection_model='detection_03', recognition_model='recognition_04', return_face_attributes=['qualityForRecognition'])
         for face in detected_faces:
             if face.face_attributes.quality_for_recognition != QualityForRecognition.high:
                 sufficientQuality = False
                 print("{} has insufficient quality".format(face))
                 break
-            cv_client.person_group_person.add_face_from_url(PERSON_GROUP_ID, child.person_id, image)
+            vision_client.person_group_person.add_face_from_url(PERSON_GROUP_ID, child.person_id, image)
             print("face {} added to person {}".format(face.face_id, child.person_id))
         if not sufficientQuality: continue
 
@@ -188,17 +188,17 @@ def group_identify(cv_client)
     '''
     # Train the person group
     print("pg resource is {}".format(PERSON_GROUP_ID))
-    rawresponse = cv_client.person_group.train(PERSON_GROUP_ID, raw= True)
+    rawresponse = vision_client.person_group.train(PERSON_GROUP_ID, raw= True)
     print(rawresponse)
 
     while (True):
-        training_status = cv_client.person_group.get_training_status(PERSON_GROUP_ID)
+        training_status = vision_client.person_group.get_training_status(PERSON_GROUP_ID)
         print("Training status: {}.".format(training_status.status))
         print()
         if (training_status.status is TrainingStatusType.succeeded):
             break
         elif (training_status.status is TrainingStatusType.failed):
-            cv_client.person_group.delete(person_group_id=PERSON_GROUP_ID)
+            vision_client.person_group.delete(person_group_id=PERSON_GROUP_ID)
             sys.exit('Training the person group has failed.')
         time.sleep(5)
 
@@ -214,14 +214,14 @@ def group_identify(cv_client)
     # Detect faces
     face_ids = []
     # We use detection model 3 to get better performance, recognition model 4 to support quality for recognition attribute.
-    faces = cv_client.face.detect_with_url(test_image, detection_model='detection_03', recognition_model='recognition_04', return_face_attributes=['qualityForRecognition'])
+    faces = vision_client.face.detect_with_url(test_image, detection_model='detection_03', recognition_model='recognition_04', return_face_attributes=['qualityForRecognition'])
     for face in faces:
         # Only take the face if it is of sufficient quality.
         if face.face_attributes.quality_for_recognition == QualityForRecognition.high or face.face_attributes.quality_for_recognition == QualityForRecognition.medium:
             face_ids.append(face.face_id)
 
     # Identify faces
-    results = cv_client.face.identify(face_ids, PERSON_GROUP_ID)
+    results = vision_client.face.identify(face_ids, PERSON_GROUP_ID)
     print('Identifying faces in image')
     if not results:
         print('No person identified in the person group')
@@ -230,7 +230,7 @@ def group_identify(cv_client)
             print('Person is identified for face ID {} in image, with a confidence of {}.'.format(identifiedFace.face_id, identifiedFace.candidates[0].confidence)) # Get topmost confidence score
 
             # Verify faces
-            verify_result = cv_client.face.verify_face_to_person(identifiedFace.face_id, identifiedFace.candidates[0].person_id, PERSON_GROUP_ID)
+            verify_result = vision_client.face.verify_face_to_person(identifiedFace.face_id, identifiedFace.candidates[0].person_id, PERSON_GROUP_ID)
             print('verification result: {}. confidence: {}'.format(verify_result.is_identical, verify_result.confidence))
         else:
             print('No person identified for face ID {} in image.'.format(identifiedFace.face_id))
