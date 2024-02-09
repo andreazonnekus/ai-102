@@ -1,33 +1,27 @@
-import argparse
-from ai_search import Search
-from vision_analysis import VisionAnalysis
-from vision_detection import VisionDetection
-from text_analysis import TextAnalysis
-from translation import Translation
-from conversational_model import ConversationalModel
-from openai_cmd import OpenAI
-from ocr import OCR
-from document_intelligence import DocumentIntelligence
-from video_processing import VideoProcessing
-from speech_synthesis import SpeechSynthesis
+import argparse, os, importlib, sys, inspect
+from art import *
+
+
+# import classes
 
 class MULTITOOL:
     def __init__(self):
-        self.actions = {
-            'search': Search,
-            'vision analysis': VisionAnalysis,
-            'vision detection': VisionDetection,
-            'text analysis': TextAnalysis,
-            'translate': Translation,
-            'conversation model': ConversationalModel,
-            'open AI': OpenAI,
-            'ocr': OCR,
-            'document intelligence': DocumentIntelligence,
-            'video processing': VideoProcessing,
-            'speech synthesis': SpeechSynthesis,
-        }
+        sys.path.append(f'{os.sep}classes')
+
+        actions = {}
+
+        for module in [x for x in os.listdir('classes') if (x.find('.py') != -1 and x != "__init__.py")]:
+            module = importlib.import_module(f'classes.{module.split(".")[0]}')
+
+            class_name = inspect.getmembers(module, inspect.isclass)[0][0]
+            actions[str.lower(class_name)] = getattr(module, class_name)
+        del module
+        
+        tprint('hello world', font="tarty1")
+
+        self.actions = actions
         self.parser = argparse.ArgumentParser(description='Welcome to the multitool')
-        self.parser.add_argument('action', choices=list(self.actions.keys()) + [str(i) for i in range(1, len(self.actions)+1)], help='Choose an action by name or number')
+        self.parser.add_argument('action', choices=list(self.actions.keys()) + [str(i) for i in range(1, len(self.actions))], help='Choose an action by name or number')
         self.parser.add_argument('--function', type=str, help='Choose a function within the action class')
         self.parser.add_argument('--param1', type=int, help='Parameter 1')
         self.parser.add_argument('--param2', type=str, help='Parameter 2')
@@ -38,7 +32,7 @@ class MULTITOOL:
         if args.action.isdigit():
             # User provided a number
             action_num = int(args.action)
-            if 1 <= action_num <= 5:
+            if 1 <= action_num <= len(self.actions) - 1:
                 action_name = f'action{action_num}'
         else:
             action_name = args.action
@@ -54,6 +48,7 @@ class MULTITOOL:
             print("Invalid action. Please choose a valid action name or number.")
 
     def _list_functions(self, action_instance):
+        print(dir(action_instance))
         functions = [func for func in dir(action_instance) if callable(getattr(action_instance, func)) and not func.startswith("__")]
         print(f"Functions available in {action_instance.__class__.__name__}: {', '.join(functions)}")
 
