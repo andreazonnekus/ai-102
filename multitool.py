@@ -12,7 +12,6 @@ class MULTITOOL:
 
         for module in [x for x in os.listdir('classes') if (x.find('.py') != -1 and x != "__init__.py")]:
             module = importlib.import_module(f'classes.{module.split(".")[0]}')
-
             class_name = inspect.getmembers(module, inspect.isclass)[0][0]
             actions[str.lower(class_name)] = getattr(module, class_name)
         del module
@@ -21,9 +20,10 @@ class MULTITOOL:
 
         self.actions = actions
         self.parser = argparse.ArgumentParser(description='Welcome to the multitool')
-        self.parser.add_argument('action', choices=list(self.actions.keys()) + [str(i) for i in range(1, len(self.actions))], help='Choose an action by name or number')
+        # self.parser.add_argument('action', choices=list(self.actions.keys()) + [str(i) for i in range(1, len(self.actions))], help='Choose an action by name or number')
+        self.parser.add_argument('action', choices=list(self.actions.keys()), help='Choose an action by name or number')
         self.parser.add_argument('--function', type=str, help='Choose a function within the action class')
-        self.parser.add_argument('--param1', type=int, help='Parameter 1')
+        self.parser.add_argument('--param1', type=str, help='Parameter 1')
         self.parser.add_argument('--param2', type=str, help='Parameter 2')
 
     def run(self):
@@ -48,15 +48,14 @@ class MULTITOOL:
             print("Invalid action. Please choose a valid action name or number.")
 
     def _list_functions(self, action_instance):
-        print(dir(action_instance))
-        functions = [func for func in dir(action_instance) if callable(getattr(action_instance, func)) and not func.startswith("__")]
+        functions = [func for func in dir(action_instance) if callable(getattr(action_instance, func)) and not func.startswith("_")]
         print(f"Functions available in {action_instance.__class__.__name__}: {', '.join(functions)}")
 
     def _execute_function(self, action_instance, function_name, param1, param2):
         if hasattr(action_instance, function_name):
             # Check if the action class has the specified function
             function_to_call = getattr(action_instance, function_name)
-            function_to_call(param1, param2)
+            function_to_call()
         else:
             print(f"Invalid function '{function_name}' for the chosen action.")
 
