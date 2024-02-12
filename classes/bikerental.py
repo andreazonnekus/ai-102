@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class BikeRental:
-    def __init__(self):
+    def main(self):
         allowSelfSignedHttps(True) # this line is needed if you use self-signed certificate in your scoring service.
 
         url = os.environ.get("BIKE_RENTAL_URL") if os.environ.get("BIKE_RENTAL_URL") else sys.argv[1]

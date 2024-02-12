@@ -4,7 +4,7 @@ from azure.core.credentials import AzureKeyCredential
 from azure.ai.textanalytics import TextAnalyticsClient
 
 class TextAnalysis:
-    def __init__(self):
+    def main(self):
         global language_client
         
         load_dotenv()

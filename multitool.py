@@ -1,9 +1,7 @@
 import argparse, os, importlib, sys, inspect
 from art import *
 
-
 # import classes
-
 class MULTITOOL:
     def __init__(self):
         sys.path.append(f'{os.sep}classes')

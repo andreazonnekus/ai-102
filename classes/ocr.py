@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from utils import *
 
 class OCR:
-    def __init__(self):
+    def main(self):
         global vision_client
 
         load_dotenv()

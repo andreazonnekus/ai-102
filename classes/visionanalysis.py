@@ -7,7 +7,7 @@ import numpy as np
 import azure.ai.vision as sdk
 
 class VisionAnalysis:
-    def __init__(self):
+    def main(self):
         global vision_client
         
         load_dotenv()

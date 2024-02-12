@@ -4,7 +4,7 @@ from azure.core.credentials import AzureKeyCredential
 from azure.search.documents import SearchClient
 
 class Search:
-    def __init__(self):
+    def main(self):
 
         global search_client
 

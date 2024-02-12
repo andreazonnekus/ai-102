@@ -5,7 +5,7 @@ from azure.cognitiveservices.vision.customvision.training import CustomVisionTra
 from azure.cognitiveservices.vision.customvision.training.models import ImageFileCreateBatch, ImageFileCreateEntry, Region
 
 class VisionDetection:
-    def __init__():
+    def main():
         global training_client
         global custom_vision_project
 
@@ -106,7 +106,7 @@ class VisionDetection:
             color = 'magenta'
             for prediction in results.predictions:
                 # Only show objects with a > 50% probability
-                if (prediction.probability*100) > 50:
+                if (prediction.probability) > 0.5:
                     # Box coordinates and dimensions are proportional - convert to absolutes
                     left = prediction.bounding_box.left * w 
                     top = prediction.bounding_box.top * h 

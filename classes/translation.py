@@ -2,7 +2,7 @@ import requests, uuid, json, os
 from dotenv import load_dotenv
 
 class Translation:
-    def __init__(self):
+    def main(self):
         load_dotenv()
 
         # Add your key and url

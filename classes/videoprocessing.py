@@ -1,4 +1,4 @@
 
 class VideoProcessing:
-    def __init__(self):
+    def main(self):
         pass

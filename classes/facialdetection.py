@@ -11,7 +11,7 @@ from azure.cognitiveservices.vision.face.models import TrainingStatusType, Perso
 load_dotenv()
 
 class FacialDetection:
-    def __init__(self):
+    def main(self):
         global vision_client
 
         try:

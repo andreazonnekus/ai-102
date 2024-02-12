@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 
 class ConversationalModel:
-    def __init__(self):
+    def main(self):
         global conversational_client
 
         try:

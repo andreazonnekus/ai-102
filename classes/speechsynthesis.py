@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 
 class SpeechSynthesis:
-    def __init__(self):
+    def main(self):
         global training_client
 
         try:

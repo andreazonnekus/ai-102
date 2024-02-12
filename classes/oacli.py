@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 class OACLI:
-    def __init__(self):
+    def main(self):
         global client
         
         load_dotenv()
