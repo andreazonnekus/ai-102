@@ -7,17 +7,15 @@ import numpy as np
 import azure.ai.vision as sdk
 
 class VisionAnalysis:
-    def __init__(self):
-        global vision_client
-        
+    def __init__(self) -> None:        
         load_dotenv()
+        url = os.getenv('VISION_URL')
+        key = os.getenv('VISION_KEY')
 
+        self.vision_client = sdk.VisionServiceOptions(url, key)
+
+    def main(self):
         try:
-            url = os.getenv('VISION_URL')
-            key = os.getenv('VISION_KEY')
-
-            vision_client = sdk.VisionServiceOptions(url, key)
-
             # Get image
             if len(sys.argv) > 1:
                 if len(sys.argv) > 2:
@@ -27,19 +25,19 @@ class VisionAnalysis:
             
                 # Analyze image
                 if sys.argv[1] == 'analyse':
-                    analyse_image(image_file)
+                    self.analyse_image(image_file)
 
                 # Generate thumbnail
                 # Not supported in australiaeast
                 if sys.argv[1] == 'bgf':
-                    backgroundForeground(image_file)
+                    self.background_foreground(image_file)
             else:
                 image_file = os.path.join('static', 'input', 'street.jpg')
-                analyse_image(image_file)
+                self.analyse_image(image_file)
         except Exception as ex:
             print(ex)
         
-    def analyse_image(image_file):
+    def analyse_image(self, image_file):
         print('\nAnalyzing', image_file)
 
         # Specify features to be retrieved
@@ -56,7 +54,7 @@ class VisionAnalysis:
         # Get image analysis
         image = sdk.VisionSource(image_file)
 
-        image_analyzer = sdk.ImageAnalyzer(vision_client, image, analysis_options)
+        image_analyzer = sdk.ImageAnalyzer(self.vision_client, image, analysis_options)
 
         result = image_analyzer.analyze()
 
@@ -145,7 +143,7 @@ class VisionAnalysis:
             print("\tError message: {}".format(error_details.message))
 
 
-    def backgroundForeground(image_file):
+    def background_foreground(self, image_file):
         print('\nRemove the background from the image or generate a foreground matte')
 
         image = sdk.VisionSource(image_file)
@@ -155,7 +153,7 @@ class VisionAnalysis:
         # Set the image analysis segmentation mode to background or foreground
         analysis_options.segmentation_mode = sdk.ImageSegmentationMode.BACKGROUND_REMOVAL
             
-        image_analyzer = sdk.ImageAnalyzer(vision_client, image, analysis_options)
+        image_analyzer = sdk.ImageAnalyzer(self.vision_client, image, analysis_options)
 
         result = image_analyzer.analyze()
 
@@ -166,7 +164,7 @@ class VisionAnalysis:
             print("\tOutput image height = {}".format(result.segmentation_result.image_height))
             print("\tOutput image width = {}".format(result.segmentation_result.image_width))
 
-            outputcv2.imwrite(os.path.join('static', 'output', 'processed_' + image_file.split(os.sep)[-1]), image_buffer)
+            cv2.imwrite(os.path.join('static', 'output', 'processed_' + image_file.split(os.sep)[-1]), image_buffer)
         else:
             error_details = sdk.ImageAnalysisErrorDetails.from_result(result)
             print("Analysis failed.")

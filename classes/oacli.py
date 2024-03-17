@@ -1,16 +1,18 @@
 import time, json, sys, os, requests
+sys.path.append(os.getcwd())
+import utils
 from dotenv import load_dotenv
 from openai import OpenAI
 
-from utils import *
-
-class OpenAI:
-    def __init__(self):
+class OACLI:
+    def __init__(self) -> None:
         global client
         
         load_dotenv()
 
         client = OpenAI()
+
+    def main(self):
 
         # Analyze image
         if len(sys.argv) > 0:
@@ -21,16 +23,16 @@ class OpenAI:
         
             # Chat
             if sys.argv[1] == 'chat':
-                chat_completions()
+                self.chat_completions()
             # Get embeddings
             elif sys.argv[1] == 'embed':
-                embeddings(prompt)
+                self.embeddings(prompt)
             # Generate image
             elif sys.argv[1] == 'image':
-                images(prompt)
+                self.images(prompt)
 
 
-    def chat_completions():
+    def chat_completions(self):
         system_prompt, user_prompt = None, None
 
         while system_prompt is None:
@@ -63,7 +65,7 @@ class OpenAI:
         print(completion.choices[0].message.content)
 
 
-    def embeddings(prompt = None):
+    def embeddings(self, prompt = None):
         while prompt is None:
             prompt = input('\nPlease supply text to generate embeddings:')
 
@@ -71,6 +73,11 @@ class OpenAI:
             model="text-embedding-ada-002",
             input=prompt        
         )
+
+        filename = input(f'\nFor saving in {os.path.join("static", "output")} please supply a file name for generated images and type \'n\' to only display:\n')
+
+        if filename == 'n':
+            filename = None
 
         if filename:
             outputfile = os.path.join('static', 'output', 'embeddings_' + filename + '.txt')
@@ -81,32 +88,35 @@ class OpenAI:
         else:
             print(embedding)
 
-
-
-    def images(prompt = None):
-        while prompt is None:
+    def images(self, prompt = None):
+        while prompt is None or not isinstance(prompt, str):
             prompt = input('\nPlease supply a prompt to generate images:\n')
         
         filename = input(f'\nFor saving in {os.path.join("static", "output")} please supply a file name for generated images:\n')
 
         amount = input(f'\nHow many images do you want?\n')
+        amount = amount if int(amount) < 3 else 2 # I'm cheap, so...
 
-        amount = amount if int(amount) < 3 else 2
+        size = input(f'\nWhat size do you want them? Choose from: {", ".join(utils.openai_image_sizes)}\n')
 
-        response = client.images.generate(
-            prompt=prompt,
-            n=amount,
-            size="512x512"
-        )
+        try:
+            response = client.images.generate(
+                prompt = prompt,
+                n = int(amount),
+                size = size
+            )
+        except Exception as e:
+            print(e)
 
-        for i in range(0, len(response.data)):
-            if response.data[i] and is_url(response.data[i].url):
-                image = requests.get(response.data[i].url).content
-            
-            if filename and image:
-                outputfile = os.path.join('static', 'output', f'generated_{filename}_{i}.jpg')
-                with open(outputfile, 'wb') as file:
-                    file.write(image)
+        if response.data:
+            for i in range(0, len(response.data)):
+                if response.data[i] and utils.is_url(response.data[i].url):
+                    image = requests.get(response.data[i].url).content
+                
+                if filename and image:
+                    outputfile = os.path.join('static', 'output', f'generated_{filename}_{i}.jpg')
+                    with open(outputfile, 'wb') as file:
+                        file.write(image)
 
-                if os.path.isfile(outputfile):
-                    print(f'File was saved at {outputfile}')
+                    if os.path.isfile(outputfile):
+                        print(f'File was saved at {outputfile}')

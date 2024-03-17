@@ -1,8 +1,8 @@
 from dotenv import load_dotenv
 
-class ConversationalModel:
-    def __init__(self):
-        global conversational_client
+class DocumentIntelligence:
+    def main(self):
+        global training_client
 
         try:
             # Get Configuration Settings
@@ -14,19 +14,19 @@ class ConversationalModel:
             model_name = os.getenv('CLASSIFICATION_MODEL')
 
             # Get the Custom Vision project
-            custom_vision_project = conversational_client.get_project(project_id)
+            custom_vision_project = training_client.get_project(project_id)
             
             # Analyze image
             if len(sys.argv) > 0:
 
                 if len(sys.argv) > 1:
-                    search_term = sys.argv[2] if 
+                    search_term = sys.argv[2]
                 # Train
                 if sys.argv[1] == 'search':
                     
                     # Authenticate a client for the training API
                     credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})
-                    conversational_client = CustomVisionTrainingClient(training_endpoint, credentials)
+                    training_client = CustomVisionTrainingClient(training_endpoint, credentials)
 
                     train(custom_vision_project, folder)
                 elif sys.argv[1] == 'test':
@@ -39,6 +39,3 @@ class ConversationalModel:
                     test(model_name, custom_vision_project, img)
         except Exception as ex:
             print(ex)
-
-    def converse():
-        # TODO: do something
