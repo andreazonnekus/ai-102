@@ -1,15 +1,18 @@
 import time, json, sys, os, requests
+sys.path.append(os.getcwd())
 import utils
 from dotenv import load_dotenv
 from openai import OpenAI
 
 class OACLI:
-    def main(self):
+    def __init__(self) -> None:
         global client
         
         load_dotenv()
 
         client = OpenAI()
+
+    def main(self):
 
         # Analyze image
         if len(sys.argv) > 0:
@@ -20,16 +23,16 @@ class OACLI:
         
             # Chat
             if sys.argv[1] == 'chat':
-                chat_completions()
+                self.chat_completions()
             # Get embeddings
             elif sys.argv[1] == 'embed':
-                embeddings(prompt)
+                self.embeddings(prompt)
             # Generate image
             elif sys.argv[1] == 'image':
-                images(prompt)
+                self.images(prompt)
 
 
-    def chat_completions():
+    def chat_completions(self):
         system_prompt, user_prompt = None, None
 
         while system_prompt is None:
@@ -62,7 +65,7 @@ class OACLI:
         print(completion.choices[0].message.content)
 
 
-    def embeddings(prompt = None):
+    def embeddings(self, prompt = None):
         while prompt is None:
             prompt = input('\nPlease supply text to generate embeddings:')
 
@@ -70,6 +73,11 @@ class OACLI:
             model="text-embedding-ada-002",
             input=prompt        
         )
+
+        filename = input(f'\nFor saving in {os.path.join("static", "output")} please supply a file name for generated images and type \'n\' to only display:\n')
+
+        if filename == 'n':
+            filename = None
 
         if filename:
             outputfile = os.path.join('static', 'output', 'embeddings_' + filename + '.txt')
@@ -80,9 +88,7 @@ class OACLI:
         else:
             print(embedding)
 
-
-
-    def images(prompt = None):
+    def images(self, prompt = None):
         while prompt is None or not isinstance(prompt, str):
             prompt = input('\nPlease supply a prompt to generate images:\n')
         
