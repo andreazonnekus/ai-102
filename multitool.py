@@ -53,7 +53,7 @@ class MULTITOOL:
         if hasattr(action_instance, function_name):
             # Check if the action class has the specified function
             function_to_call = getattr(action_instance, function_name)
-            function_to_call(param1)
+            function_to_call(param1, param2)
         else:
             print(f"Invalid function '{function_name}' for the chosen action.")
 

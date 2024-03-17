@@ -1,55 +1,47 @@
-import time, json, os, sys
+import time, json, os, sys, cv2
 from dotenv import load_dotenv
+from PIL import Image, ImageDraw
+import matplotlib as plt
+import numpy as np
 from msrest.authentication import ApiKeyCredentials
-from azure.cognitiveservices.vision.customvision.training import CustomVisionTrainingClient
+from azure.cognitiveservices.vision.customvision.training import CustomVisionTrainingClient, CustomVisionPredictionClient
 from azure.cognitiveservices.vision.customvision.training.models import ImageFileCreateBatch, ImageFileCreateEntry, Region
 
 class VisionDetection:
-    def main():
-        global training_client
-        global custom_vision_project
+    def __init__(self) -> None:
+        # Get Configuration Settings
+        load_dotenv()
 
+        url = os.getenv('VISION_URL')
+        key = os.getenv('VISION_KEY')
+        self.project_id = os.getenv('PROJECT_ID')
+        self.model_name = os.getenv('CLASSIFICATION_MODEL')
+        
+        # Authenticate a client for the training API
+        credentials = ApiKeyCredentials(in_headers={"Training-key": key})
+        self.training_client = CustomVisionTrainingClient(url, credentials)
+        self.prediction_client = CustomVisionPredictionClient(endpoint=url, credentials=credentials)
+        self.custom_vision_project = self.training_client.get_project(self.project_id)
+    def main(self):
         try:
-            # Get Configuration Settings
-            load_dotenv()
-
-            training_endpoint = os.getenv('VISION_URL')
-            training_key = os.getenv('VISION_KEY')
-            project_id = os.getenv('PROJECT_ID')
-            model_name = os.getenv('CLASSIFICATION_MODEL')
-
-            # Get the Custom Vision project
-            custom_vision_project = training_client.get_project(project_id)
-            
             # Analyze image
             if len(sys.argv) > 0:
             
                 # Train
                 if sys.argv[1] == 'train':
                     folder = os.path.join('static', sys.argv[2]) if sys.argv[2] else os.path.join('static', 'train')
-                    
-                    # Authenticate a client for the training API
-                    credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})
-                    training_client = CustomVisionTrainingClient(training_endpoint, credentials)
-
-                    
-                    train(folder)
+                    self.train(folder)
                 elif sys.argv[1] == 'test':
                     img = os.path.join('static', 'test', sys.argv[3]) if sys.argv[3] and sys.argv[2] else os.path.join('static', 'test', 'image.jpg')
-                    
-                    # Authenticate a client for the training API
-                    credentials = ApiKeyCredentials(in_headers={"Prediction-key": prediction_key})
-                    prediction_client = CustomVisionPredictionClient(endpoint=prediction_endpoint, credentials=credentials)
-
-                    test(model_name, img)
+                    self.test(self.model_name, img)
         except Exception as ex:
             print(ex)
 
-    def train(folder):
+    def train(self, folder):
         print("Uploading images...")
 
         # Get the tags defined in the project
-        tags = training_client.get_tags(custom_vision_project.id)
+        tags = self.training_client.get_tags(self.custom_vision_project.id)
 
         # Create a list of images with tagged regions
         tagged_images_with_regions = []
@@ -73,7 +65,7 @@ class VisionDetection:
                     tagged_images_with_regions.append(ImageFileCreateEntry(name=file, contents=image_data.read(), regions=regions))
 
         # Upload the list of images as a batch
-        upload_result = training_client.create_images_from_files(custom_vision_project.id, ImageFileCreateBatch(images=tagged_images_with_regions))
+        upload_result = self.training_client.create_images_from_files(self.custom_vision_project.id, ImageFileCreateBatch(images=tagged_images_with_regions))
         # Check for failure
         if not upload_result.is_batch_successful:
             print("Image batch upload failed.")
@@ -82,11 +74,10 @@ class VisionDetection:
         else:
             print("Images uploaded.")
 
-    def test(model, project, img):
+    def test(self, model, project, image_file):
         try:
-
             # Load image and get height, width and channels
-            cv2.imshow('Detecting objects in', image_file)
+            cv2.imshow('Detecting objects in', self.image_file)
             cv2.waitKey(0)
 
             image = Image.open(image_file)
@@ -94,7 +85,7 @@ class VisionDetection:
 
             # Detect objects in the test image
             with open(image_file, mode="rb") as image_data:
-                results = prediction_client.detect_image(project.id, model, image_data)
+                results = self.prediction_client.detect_image(project.id, model, image_data)
 
             # Create a figure for the results
             fig = plt.figure(figsize=(8, 8))

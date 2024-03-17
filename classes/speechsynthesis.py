@@ -1,21 +1,24 @@
 from dotenv import load_dotenv
+import os, sys
 
 class SpeechSynthesis:
+    def __init__(self) -> None:
+        # Get Configuration Settings
+        load_dotenv()
+
+        url = os.getenv('VISION_URL')
+        key = os.getenv('VISION_KEY')
+        project_id = os.getenv('PROJECT_ID')
+        model_name = os.getenv('CLASSIFICATION_MODEL')
+        
+        # Authenticate a client for the training API
+        credentials = ApiKeyCredentials(in_headers={"Training-key": key})
+        self.training_client = CustomVisionTrainingClient(url, credentials)
+
+        # Get the Custom Vision project
+        self.custom_vision_project = self.training_client.get_project(project_id)
     def main(self):
-        global training_client
-
         try:
-            # Get Configuration Settings
-            load_dotenv()
-
-            training_endpoint = os.getenv('VISION_URL')
-            training_key = os.getenv('VISION_KEY')
-            project_id = os.getenv('PROJECT_ID')
-            model_name = os.getenv('CLASSIFICATION_MODEL')
-
-            # Get the Custom Vision project
-            custom_vision_project = training_client.get_project(project_id)
-            
             # Analyze image
             if len(sys.argv) > 0:
 
@@ -24,9 +27,6 @@ class SpeechSynthesis:
                 # Train
                 if sys.argv[1] == 'search':
                     
-                    # Authenticate a client for the training API
-                    credentials = ApiKeyCredentials(in_headers={"Training-key": training_key})
-                    training_client = CustomVisionTrainingClient(training_endpoint, credentials)
 
                     train(custom_vision_project, folder)
                 elif sys.argv[1] == 'test':

@@ -11,21 +11,23 @@ from azure.cognitiveservices.vision.face.models import TrainingStatusType, Perso
 load_dotenv()
 
 class FacialDetection:
+    def __init__(self):
+        # Base url for the Verify and Facelist/Large Facelist operations
+        url = os.environ.get("VISION_URL")
+        if not url:
+            raise Exception("A key should be provided to invoke the endpoint as either the VISION_URL or as an argument to the cmd ")
+
+        key = os.environ.get("VISION_KEY")
+        if not key:
+            raise Exception("A key should be provided to invoke the endpoint as either the VISION_KEY or as an argument to the cmd ")
+        
+        # Create an authenticated FaceClient
+        vision_client = sdk.VisionServiceOptions(url, CognitiveServicesCredentials(key))
+        
     def main(self):
         global vision_client
 
         try:
-            # Base url for the Verify and Facelist/Large Facelist operations
-            url = os.environ.get("VISION_URL")
-            if not url:
-                raise Exception("A key should be provided to invoke the endpoint as either the VISION_URL or as an argument to the cmd ")
-
-            key = os.environ.get("VISION_KEY")
-            if not key:
-                raise Exception("A key should be provided to invoke the endpoint as either the VISION_KEY or as an argument to the cmd ")
-            
-            # Create an authenticated FaceClient
-            vision_client = sdk.VisionServiceOptions(url, CognitiveServicesCredentials(key))
 
             # Get image
             if len(sys.argv) > 1:

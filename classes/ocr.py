@@ -10,9 +10,7 @@ from matplotlib import pyplot as plt
 from utils import *
 
 class OCR:
-    def main(self):
-        global vision_client
-
+    def __init__(self) -> None:
         load_dotenv()
 
         # Set the values of your computer vision endpoint and computer vision key as environment variables:
@@ -25,7 +23,9 @@ class OCR:
             exit()
 
         # Create an Image Analysis client
-        vision_client = sdk.VisionServiceOptions(url, key)
+        self.vision_client = sdk.VisionServiceOptions(url, key)
+        
+    def main(self):
 
         # Get image
         if len(sys.argv) > 1:
@@ -36,11 +36,11 @@ class OCR:
             
             # Analyze image
             if sys.argv[1] == 'read':
-                read_image(image_file)
+                self.read_image(image_file)
 
         else:
             image_file = 'https://learn.microsoft.com/azure/ai-services/computer-vision/media/quickstarts/presentation.png'
-            read_image(image_file)
+            self.read_image(image_file)
 
     def read_image(image_file):
 
@@ -58,7 +58,7 @@ class OCR:
         )
 
         # Get image analysis
-        image_analyzer = sdk.ImageAnalyzer(vision_client, img, analysis_options)
+        image_analyzer = sdk.ImageAnalyzer(self.vision_client, img, analysis_options)
         result = image_analyzer.analyze()
 
         print("Image analysis results:")
